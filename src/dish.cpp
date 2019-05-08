@@ -79,6 +79,23 @@ void zmq::dish_t::xwrite_activated (pipe_t *pipe_)
     _dist.activated (pipe_);
 }
 
+int zmq::dish_t::xsetsockopt (int option_,
+                               const void *optval_,
+                               size_t optvallen_)
+{
+    if (optvallen_ != sizeof (int) || *static_cast<const int *> (optval_) < 0) {
+        errno = EINVAL;
+        return -1;
+    }
+    if (option_ == ZMQ_INVERT_MATCHING)
+        _invert_matching = (*static_cast<const int *> (optval_) == 0);
+    else {
+        errno = EINVAL;
+        return -1;
+    }
+    return 0;
+}
+
 void zmq::dish_t::xpipe_terminated (pipe_t *pipe_)
 {
     _fq.pipe_terminated (pipe_);
@@ -185,6 +202,7 @@ int zmq::dish_t::xrecv (msg_t *msg_)
 
 int zmq::dish_t::xxrecv (msg_t *msg_)
 {
+    bool cond;
     do {
         //  Get a message using fair queueing algorithm.
         const int rc = _fq.recv (msg_);
@@ -195,7 +213,8 @@ int zmq::dish_t::xxrecv (msg_t *msg_)
             return -1;
 
         //  Skip non matching messages
-    } while (0 == _subscriptions.count (std::string (msg_->group ())));
+        cond = (0 == _subscriptions.count (std::string (msg_->group ())));
+    } while (_invert_matching != cond);
 
     //  Found a matching message
     return 0;

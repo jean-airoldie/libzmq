@@ -61,6 +61,7 @@ class dish_t : public socket_base_t
     bool xhas_in ();
     void xread_activated (zmq::pipe_t *pipe_);
     void xwrite_activated (zmq::pipe_t *pipe_);
+    int xsetsockopt (int option_, const void *optval_, size_t optvallen_);
     void xhiccuped (pipe_t *pipe_);
     void xpipe_terminated (zmq::pipe_t *pipe_);
     int xjoin (const char *group_);
@@ -81,6 +82,9 @@ class dish_t : public socket_base_t
     //  The repository of subscriptions.
     typedef std::set<std::string> subscriptions_t;
     subscriptions_t _subscriptions;
+
+    // If true, will match groups that are not joined.
+    bool _invert_matching;
 
     //  If true, 'message' contains a matching message to return on the
     //  next recv call.
